@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lector-epub-v1';
+const CACHE_NAME = 'lector-epub-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
