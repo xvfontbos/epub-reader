@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Fons fosc -->
+  <rect width="192" height="192" rx="32" fill="#111111"/>
+  <!-- Llom del llibre (centre) -->
+  <rect x="91" y="40" width="10" height="112" rx="2" fill="#c8a97e"/>
+  <!-- Pàgina esquerra -->
+  <path d="M88 48 C70 48 40 54 32 64 L32 144 C40 134 70 128 88 128 Z" fill="none" stroke="#c8a97e" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Pàgina dreta -->
+  <path d="M104 48 C122 48 152 54 160 64 L160 144 C152 134 122 128 104 128 Z" fill="none" stroke="#c8a97e" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Línies de text pàgina esquerra -->
+  <line x1="44" y1="80" x2="82" y2="76" stroke="#c8a97e" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="44" y1="92" x2="82" y2="88" stroke="#c8a97e" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="44" y1="104" x2="82" y2="100" stroke="#c8a97e" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="44" y1="116" x2="72" y2="113" stroke="#c8a97e" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <!-- Línies de text pàgina dreta -->
+  <line x1="110" y1="76" x2="148" y2="80" stroke="#c8a97e" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="110" y1="88" x2="148" y2="92" stroke="#c8a97e" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="110" y1="100" x2="148" y2="104" stroke="#c8a97e" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="110" y1="113" x2="138" y2="116" stroke="#c8a97e" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+</svg>
