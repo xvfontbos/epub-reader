@@ -16,6 +16,6 @@ Un lector de llibres electrònics en format EPUB, lleuger, elegant i dissenyat p
 
 ## ✒️ Autor
 * **xvfontbos** - *Desenvolupament inicial* 
-* **claude** - *Desenvolupament inicial* 
+* **Claude** - *Desenvolupament i implementació* 
 ---
 *Aquest projecte ha estat creat per optimitzar l'experiència de lectura en ordinadors amb pocs recursos.*
