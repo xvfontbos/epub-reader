@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ca">
 <head>
-<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" href="image.png">
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -284,6 +284,28 @@
   body.light #fs-btn { background: transparent; border-color: #bbb; color: #666; }
   body.light #fs-btn:hover { color: #111; border-color: #666; }
 
+  #tts-btn {
+    background: transparent;
+    border: 1px solid #444;
+    color: #aaa;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: sans-serif;
+    font-size: 0.85rem;
+    min-width: 80px;
+  }
+  #tts-btn:hover { color: #eee; border-color: #888; }
+  #tts-btn.active { border-color: #c8a97e; color: #c8a97e; }
+  body.light #tts-btn { background: transparent; border-color: #bbb; color: #666; }
+  body.light #tts-btn:hover { color: #111; border-color: #666; }
+
+  /* Ressaltat de paraula llegida */
+  .tts-word {
+    background: rgba(200, 169, 126, 0.45);
+    border-radius: 2px;
+  }
+
   /* Cercador */
   #search-bar {
     display: none;
@@ -400,6 +422,7 @@
   <button id="theme-btn" onclick="toggleTheme()">☀</button>
   <button id="search-toggle-btn" onclick="toggleSearch()">Cerca</button>
   <button id="fs-btn" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
+  <button id="tts-btn" onclick="toggleTTS()">▶ Llegir</button>
 </div>
 
 <div id="search-bar">
@@ -936,6 +959,186 @@ document.addEventListener('fullscreenchange', () => {
 document.addEventListener('keydown', e => {
   if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
 });
+
+// ── TEXT TO SPEECH ─────────────────────────────────────
+let ttsActive    = false;
+let ttsWords     = [];      // llista de paraules de la pàgina actual
+let ttsWordIndex = 0;       // paraula actual
+let ttsUtter     = null;
+let ttsPageText  = '';
+
+function toggleTTS() {
+  if (ttsActive) {
+    stopTTS();
+  } else {
+    startTTS();
+  }
+}
+
+function startTTS() {
+  if (!window.speechSynthesis) {
+    alert('El teu navegador no suporta la lectura en veu alta.');
+    return;
+  }
+  ttsActive = true;
+  document.getElementById('tts-btn').textContent = '■ Aturar';
+  document.getElementById('tts-btn').classList.add('active');
+  speakCurrentPage();
+}
+
+function stopTTS() {
+  ttsActive = false;
+  window.speechSynthesis.cancel();
+  clearTTSHighlight();
+  document.getElementById('tts-btn').textContent = '▶ Llegir';
+  document.getElementById('tts-btn').classList.remove('active');
+  ttsUtter = null;
+}
+
+function getVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  // Buscar veu 2 de es-ES (índex 1)
+  const esVoices = voices.filter(v => v.lang === 'es-ES' || v.lang.startsWith('es'));
+  return esVoices[1] || esVoices[0] || voices.find(v => v.lang.startsWith('es')) || null;
+}
+
+function speakCurrentPage() {
+  if (!ttsActive) return;
+
+  // Obtenir el text de la pàgina actual
+  const content = document.getElementById('content');
+  const area    = document.getElementById('reader-area');
+  const pc      = document.getElementById('page-container');
+  const w       = area.clientWidth;
+
+  // Etiquetar cada paraula amb un span per ressaltar
+  wrapWordsInSpans(content);
+
+  // Recollir les paraules de la pàgina visible
+  const allSpans = Array.from(content.querySelectorAll('span.tts-span'));
+  const pageSpans = allSpans.filter(span => {
+    const rect = span.getBoundingClientRect();
+    const pcRect = pc.getBoundingClientRect();
+    const relLeft = rect.left - pcRect.left + (currentPage * w);
+    return relLeft >= currentPage * w && relLeft < (currentPage + 1) * w;
+  });
+
+  if (!pageSpans.length) {
+    // Pàgina sense text, passar a la següent
+    nextPageTTS();
+    return;
+  }
+
+  ttsWords = pageSpans;
+  ttsWordIndex = 0;
+  ttsPageText = pageSpans.map(s => s.textContent).join(' ');
+
+  ttsUtter = new SpeechSynthesisUtterance(ttsPageText);
+  ttsUtter.lang  = 'es-ES';
+  ttsUtter.rate  = 0.95;
+  ttsUtter.pitch = 1;
+
+  // Assignar veu
+  const voice = getVoice();
+  if (voice) ttsUtter.voice = voice;
+
+  // Ressaltar paraula per paraula
+  ttsUtter.addEventListener('boundary', e => {
+    if (e.name !== 'word') return;
+    clearTTSHighlight();
+    // Trobar quina paraula correspon per posició al text
+    let charCount = 0;
+    for (let i = 0; i < ttsWords.length; i++) {
+      charCount += ttsWords[i].textContent.length + 1;
+      if (charCount > e.charIndex) {
+        ttsWords[i].classList.add('tts-word');
+        ttsWordIndex = i;
+        break;
+      }
+    }
+  });
+
+  ttsUtter.onend = () => {
+    if (!ttsActive) return;
+    clearTTSHighlight();
+    nextPageTTS();
+  };
+
+  ttsUtter.onerror = () => stopTTS();
+
+  // Esperar que les veus estiguin carregades
+  if (window.speechSynthesis.getVoices().length === 0) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.speak(ttsUtter);
+    };
+  } else {
+    window.speechSynthesis.speak(ttsUtter);
+  }
+}
+
+function nextPageTTS() {
+  clearTTSHighlight();
+  removeWordSpans();
+  setTimeout(() => {
+    if (currentPage < totalPages - 1) {
+      goToPage(currentPage + 1);
+      setTimeout(speakCurrentPage, 400);
+    } else if (currentIndex < spine.length - 1) {
+      goTo(currentIndex + 1, 0).then ? goTo(currentIndex + 1, 0) : goTo(currentIndex + 1, 0);
+      setTimeout(speakCurrentPage, 700);
+    } else {
+      stopTTS();
+    }
+  }, 300);
+}
+
+function clearTTSHighlight() {
+  document.querySelectorAll('span.tts-word').forEach(s => s.classList.remove('tts-word'));
+}
+
+function wrapWordsInSpans(container) {
+  // Si ja estan embolcallades, no fer res
+  if (container.querySelector('span.tts-span')) return;
+  walkTextNodesTTS(container, node => {
+    const text = node.nodeValue;
+    if (!text.trim()) return;
+    const frag = document.createDocumentFragment();
+    const parts = text.split(/(\s+)/);
+    parts.forEach(part => {
+      if (/\S/.test(part)) {
+        const span = document.createElement('span');
+        span.className = 'tts-span';
+        span.textContent = part;
+        frag.appendChild(span);
+      } else {
+        frag.appendChild(document.createTextNode(part));
+      }
+    });
+    node.parentNode.replaceChild(frag, node);
+  });
+}
+
+function removeWordSpans() {
+  document.querySelectorAll('span.tts-span').forEach(span => {
+    const parent = span.parentNode;
+    parent.replaceChild(document.createTextNode(span.textContent), span);
+    parent.normalize();
+  });
+}
+
+function walkTextNodesTTS(node, fn) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    fn(node);
+  } else if (!['SCRIPT','STYLE','MARK'].includes(node.tagName)) {
+    Array.from(node.childNodes).forEach(child => walkTextNodesTTS(child, fn));
+  }
+}
+
+// Aturar TTS si es canvia de pàgina manualment
+const _origNextPage = nextPage;
+const _origPrevPage = prevPage;
+nextPage = function() { if (ttsActive) stopTTS(); _origNextPage(); };
+prevPage = function() { if (ttsActive) stopTTS(); _origPrevPage(); };
 </script>
 </body>
 </html>
