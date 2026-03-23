@@ -1,4 +1,4 @@
-const CACHE = 'radio-v1';
+const CACHE = 'epub-v2';
 const FILES = ['./index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
