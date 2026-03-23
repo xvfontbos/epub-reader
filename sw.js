@@ -1,4 +1,4 @@
-const CACHE = 'epub-v2';
+const CACHE = 'epub-v4';
 const FILES = ['./index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
